@@ -1,0 +1,1901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rize: Alarm Challenge, the alarm you can't sleep through</title>
+<meta name="description" content="Rize wakes your brain, not just your phone. Solve a quick challenge to turn the alarm off, or it rings right back. For iPhone, iOS 26 and later.">
+<meta property="og:title" content="Rize: Alarm Challenge">
+<meta property="og:description" content="The alarm you can't sleep through. Solve a challenge to dismiss it, or it rings right back.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0B0A0D">
+<link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23FFD24A'/%3E%3Cstop offset='1' stop-color='%23FF8A4A'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='34' fill='url(%23g)'/%3E%3Cpath d='M33 46 q5 6 10 0 M57 46 q5 6 10 0 M41 60 q9 10 18 0' stroke='%237A4A2A' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Rize: Alarm Challenge",
+  "operatingSystem": "iOS",
+  "applicationCategory": "UtilitiesApplication",
+  "description": "The alarm you can't sleep through. Solve a challenge to dismiss the alarm, or it rings right back."
+}
+</script>
+<style>
+/* ============================================================
+   RIZE DESIGN TOKENS (mirrors Rize/DesignSystem/Theme.swift)
+   ============================================================ */
+:root {
+  --coral: #FF7A59;
+  --coral-deep: #F4653F;
+  --amber: #FFB27A;
+  --error: #FF5A5A;
+  --sun-yellow: #FFD24A;
+  --sun-orange: #FF8A4A;
+  --ray: #FFC24A;
+
+  --night-bg: #0B0A0D;
+  --night-surface: #17151C;
+  --night-surface-2: #201d27;
+  --night-text: #F5F3EF;
+  --night-text2: #9A94A0;
+  --night-hairline: rgba(245,243,239,0.10);
+
+  /* Day palette. Flips to the dark neutrals under prefers-color-scheme. */
+  --day-bg: #FBF8F4;
+  --day-surface: #FFFFFF;
+  --day-text: #1A1620;
+  --day-text2: #6E6873;
+  --day-hairline: rgba(26,22,32,0.10);
+  --card-shadow: 0 8px 20px rgba(26,22,32,0.08);
+  --card-shadow-big: 0 18px 44px rgba(26,22,32,0.12);
+
+  --r-sm: 12px;
+  --r-md: 20px;
+  --r-lg: 28px;
+
+  --font-round: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --nav-h: 72px;
+  --hill-day: #F3E4D2;
+  /* Accessible accent inks: coral tuned for AA text contrast per scheme */
+  --coral-ink: #B8431E;
+  --freeze-ink: #2E6BAE;
+  --btn-label: #3D1B0C;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --day-bg: #0B0A0D;
+    --day-surface: #17151C;
+    --day-text: #F5F3EF;
+    --day-text2: #9A94A0;
+    --day-hairline: rgba(245,243,239,0.10);
+    --card-shadow: none;
+    --card-shadow-big: none;
+    --hill-day: #17151C;
+    --coral-ink: #FF8A66;
+    --freeze-ink: #8FC1F2;
+  }
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; overflow-x: clip; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  font-family: var(--font-body);
+  background: var(--night-bg);
+  color: var(--night-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  /* clip, not hidden: hidden would make body a scroll container and
+     break position: sticky (the sunrise scene pin) */
+  overflow-x: clip;
+}
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; }
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+::selection { background: rgba(255,122,89,0.35); }
+
+.wrap { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
+@media (max-width: 640px) { .wrap { width: calc(100% - 40px); } }
+
+h1, h2, h3, .rounded { font-family: var(--font-round); }
+h1 { font-size: clamp(40px, 6.4vw, 72px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.04; }
+h2 { font-size: clamp(30px, 4.4vw, 48px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.08; }
+h3 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+
+.eyebrow {
+  font-family: var(--font-round);
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--coral-ink);
+}
+.eyebrow::before { content: ""; width: 20px; height: 2px; background: var(--coral); border-radius: 999px; }
+
+/* Section rhythm */
+section { position: relative; }
+.section-pad { padding: 104px 0; }
+@media (max-width: 700px) { .section-pad { padding: 72px 0; } }
+.section-head { max-width: 620px; margin-bottom: 56px; }
+.section-head p { color: var(--day-text2); font-size: 18px; margin-top: 14px; }
+.center { text-align: center; }
+.center.section-head { margin-left: auto; margin-right: auto; }
+.center .eyebrow::before { display: none; }
+
+/* Day (light) scope */
+.day { background: var(--day-bg); color: var(--day-text); }
+
+/* Scroll reveal */
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22,0.9,0.3,1); transition-delay: var(--d, 0s); }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* Anchors clear the fixed nav */
+#how, #demo, #streaks, #privacy, #pro, #faq { scroll-margin-top: calc(var(--nav-h) + 12px); }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  font-family: var(--font-round);
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  border-radius: 999px; font-weight: 700; font-size: 17px;
+  padding: 16px 30px; transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+  text-decoration: none; white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: linear-gradient(135deg, var(--coral), var(--coral-deep)); color: var(--btn-label); box-shadow: 0 10px 26px rgba(255,122,89,0.35); }
+.btn-primary:hover { box-shadow: 0 14px 34px rgba(255,122,89,0.48); transform: translateY(-1px); }
+.btn-ghost-dark { background: rgba(245,243,239,0.08); color: var(--night-text); border: 1px solid rgba(245,243,239,0.14); }
+.btn-ghost-dark:hover { background: rgba(245,243,239,0.14); }
+.btn-tint { background: rgba(255,122,89,0.13); color: var(--coral-ink); }
+.btn-tint:hover { background: rgba(255,122,89,0.2); }
+:focus-visible { outline: 3px solid var(--coral-ink); outline-offset: 3px; border-radius: 6px; }
+
+/* App Store badge */
+.store-badge { display: inline-block; border-radius: 12px; transition: transform 0.15s ease, opacity 0.2s ease; }
+.store-badge:hover { transform: translateY(-1px); opacity: 0.92; }
+.store-badge svg { height: 52px; width: auto; }
+
+/* ============================================================
+   NAV
+   ============================================================ */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--nav-h);
+  display: flex; align-items: center;
+  transition: background 0.35s ease, box-shadow 0.35s ease, color 0.35s ease, border-color 0.35s ease;
+  color: var(--night-text);
+  border-bottom: 1px solid transparent;
+}
+.nav .wrap { display: flex; align-items: center; gap: 28px; }
+.nav.is-day {
+  background: color-mix(in srgb, var(--day-bg) 78%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(18px);
+  backdrop-filter: saturate(1.4) blur(18px);
+  color: var(--day-text);
+  border-bottom-color: var(--day-hairline);
+}
+.nav.is-night-solid {
+  background: color-mix(in srgb, var(--night-bg) 72%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(18px);
+  backdrop-filter: saturate(1.4) blur(18px);
+  border-bottom-color: var(--night-hairline);
+}
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.brand svg { width: 34px; height: 34px; }
+.brand-name { font-family: var(--font-round); font-size: 24px; font-weight: 700; letter-spacing: 0.01em; }
+.nav-links { display: flex; gap: 26px; margin-left: auto; }
+.nav-links a {
+  font-family: var(--font-round); font-size: 15px; font-weight: 600; text-decoration: none;
+  opacity: 0.82; transition: opacity 0.2s ease;
+}
+.nav-links a:hover { opacity: 1; }
+.nav-cta { margin-left: 8px; padding: 10px 20px; font-size: 15px; }
+@media (max-width: 860px) { .nav-links { display: none; } .nav .wrap { justify-content: space-between; } .nav-cta { margin-left: auto; } }
+
+/* ============================================================
+   HERO (night)
+   ============================================================ */
+.hero {
+  min-height: 100svh;
+  display: flex; align-items: center;
+  padding: calc(var(--nav-h) + 40px) 0 80px;
+  background:
+    radial-gradient(120% 90% at 78% 115%, rgba(255,122,89,0.16), transparent 55%),
+    radial-gradient(90% 70% at 15% -10%, rgba(60,52,90,0.35), transparent 60%),
+    var(--night-bg);
+  overflow: hidden;
+}
+.hero .wrap { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center; position: relative; z-index: 2; }
+.hero-copy .eyebrow { margin-bottom: 22px; }
+.hero-copy h1 .accent { background: linear-gradient(120deg, var(--sun-yellow), var(--coral)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-sub { color: var(--night-text2); font-size: 19px; max-width: 46ch; margin-top: 22px; }
+.hero-ctas { display: flex; align-items: center; gap: 18px; margin-top: 36px; flex-wrap: wrap; }
+.hero-note { margin-top: 18px; color: var(--night-text2); font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.hero-note svg { width: 15px; height: 15px; flex: none; }
+
+.stars { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.star { position: absolute; border-radius: 50%; background: #F5F3EF; opacity: 0.5; animation: twinkle 3.4s ease-in-out infinite; }
+@keyframes twinkle { 0%,100% { opacity: 0.12; } 50% { opacity: 0.65; } }
+.hero-zzz { position: absolute; font-family: var(--font-round); font-weight: 800; color: rgba(245,243,239,0.16); animation: zdrift 7s ease-in-out infinite; pointer-events: none; }
+@keyframes zdrift { 0% { transform: translateY(0) rotate(-6deg); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(-90px) rotate(8deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .star, .hero-zzz { animation: none; } }
+
+/* ============================================================
+   PHONE FRAME (shared)
+   ============================================================ */
+.phone-scene { perspective: 1400px; display: flex; justify-content: center; }
+.phone {
+  width: min(340px, 82vw);
+  aspect-ratio: 390 / 812;
+  background: #101014;
+  border-radius: 54px;
+  padding: 10px;
+  box-shadow:
+    0 0 0 1.5px rgba(245,243,239,0.14),
+    0 30px 80px rgba(0,0,0,0.55),
+    inset 0 0 4px rgba(255,255,255,0.06);
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.25s ease-out;
+}
+.phone::after { /* side button */
+  content: ""; position: absolute; right: -3px; top: 21%; width: 3px; height: 64px;
+  background: #2a2a30; border-radius: 2px;
+}
+.phone-screen {
+  width: 100%; height: 100%;
+  border-radius: 44px;
+  overflow: hidden;
+  position: relative;
+  background: var(--night-bg);
+}
+.phone .island {
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  width: 34%; height: 26px; background: #000; border-radius: 999px; z-index: 30;
+}
+.glow-behind { position: relative; }
+.glow-behind::before {
+  content: ""; position: absolute; inset: -8%;
+  background: radial-gradient(50% 50% at 50% 55%, rgba(255,138,74,0.34), transparent 70%);
+  filter: blur(30px);
+  z-index: 0;
+}
+.glow-behind .phone { z-index: 1; }
+
+/* Screens inside the phone */
+.app-screen {
+  position: absolute; inset: 0;
+  display: none;
+  flex-direction: column; align-items: center;
+  padding: 64px 22px 26px;
+  text-align: center;
+}
+.app-screen.active { display: flex; }
+.app-lockup { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+.app-lockup svg { width: 26px; height: 26px; }
+.app-lockup span { font-family: var(--font-round); font-weight: 700; font-size: 19px; }
+
+/* Ringing screen (used in hero, dark) */
+.scr-ring { justify-content: space-between; }
+.ring-top { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 12px; }
+.ring-label { font-family: var(--font-round); color: var(--night-text2); font-size: 15px; font-weight: 600; margin-top: 14px; }
+.ring-time { font-family: var(--font-round); font-size: 64px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--night-text); font-variant-numeric: tabular-nums; }
+.ring-date { color: var(--night-text2); font-size: 14px; }
+.ring-bell { position: relative; width: 92px; height: 92px; display: grid; place-items: center; margin: 8px 0; }
+.ring-bell svg { width: 44px; height: 44px; color: var(--sun-orange); animation: bellshake 1.6s ease-in-out infinite; }
+.ring-bell::before, .ring-bell::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid rgba(255,138,74,0.45);
+  animation: ripple 2.2s ease-out infinite;
+}
+.ring-bell::after { animation-delay: 1.1s; }
+@keyframes ripple { 0% { transform: scale(0.55); opacity: 0.9; } 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes bellshake { 0%, 55%, 100% { transform: rotate(0); } 60% { transform: rotate(9deg); } 70% { transform: rotate(-8deg); } 80% { transform: rotate(5deg); } 90% { transform: rotate(-3deg); } }
+@media (prefers-reduced-motion: reduce) { .ring-bell svg, .ring-bell::before, .ring-bell::after { animation: none; } }
+.ring-bottom { width: 100%; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.solve-btn {
+  font-family: var(--font-round);
+  width: 100%; padding: 17px; border-radius: 999px;
+  background: linear-gradient(135deg, var(--coral), var(--coral-deep));
+  color: var(--btn-label); font-size: 18px; font-weight: 700;
+  box-shadow: 0 10px 26px rgba(255,122,89,0.4);
+  animation: solvepulse 2s ease-in-out infinite;
+  transition: transform 0.12s ease;
+}
+.solve-btn:active { transform: scale(0.97); }
+@keyframes solvepulse { 0%,100% { box-shadow: 0 10px 26px rgba(255,122,89,0.35); } 50% { box-shadow: 0 10px 36px rgba(255,122,89,0.62); } }
+@media (prefers-reduced-motion: reduce) { .solve-btn { animation: none; } }
+.ring-hint { color: var(--night-text2); font-size: 12.5px; }
+.giveup-btn { color: var(--night-text2); font-size: 14px; font-family: var(--font-round); font-weight: 600; padding: 8px 14px; border-radius: 999px; }
+.giveup-btn:hover { color: var(--night-text); }
+
+/* Demo phone runs the app's light UI */
+.demo-screen-bg { background: #FBF8F4; }
+.demo-screen-bg .app-screen { color: #1A1620; }
+.demo-screen-bg .ring-time { color: #1A1620; }
+.demo-screen-bg .ring-label, .demo-screen-bg .ring-date, .demo-screen-bg .ring-hint { color: #6E6873; }
+.demo-screen-bg .giveup-btn { color: #6E6873; }
+.demo-screen-bg .giveup-btn:hover { color: #1A1620; }
+
+/* Challenge: math */
+.prog-dots { display: flex; gap: 8px; justify-content: center; margin: 10px 0 4px; }
+.prog-dots span { width: 9px; height: 9px; border-radius: 50%; background: rgba(26,22,32,0.14); transition: background 0.25s ease, transform 0.25s ease; }
+.prog-dots span.done { background: var(--coral); transform: scale(1.15); }
+.math-card {
+  width: 100%; background: #FFFFFF; border-radius: var(--r-md);
+  box-shadow: 0 6px 18px rgba(26,22,32,0.07);
+  padding: 18px 14px 14px; margin-top: 6px;
+}
+.math-eq { font-family: var(--font-round); font-size: 34px; font-weight: 800; letter-spacing: -0.01em; color: #1A1620; font-variant-numeric: tabular-nums; }
+.math-input {
+  min-height: 42px; margin-top: 8px;
+  font-family: var(--font-round); font-size: 27px; font-weight: 700; color: var(--coral);
+  border-bottom: 2px solid rgba(26,22,32,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+.math-input .caret { display: inline-block; width: 2px; height: 26px; background: var(--coral); margin-left: 3px; animation: caret 1.1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; width: 100%; margin-top: 14px; }
+.key {
+  font-family: var(--font-round); font-size: 22px; font-weight: 700; color: #1A1620;
+  background: #FFFFFF; border-radius: 16px; padding: 12px 0;
+  box-shadow: 0 3px 10px rgba(26,22,32,0.06);
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+.key:active { transform: scale(0.94); background: #F4EFE9; }
+.key-ok { background: linear-gradient(135deg, var(--coral), var(--coral-deep)); color: var(--btn-label); }
+.key-ok:active { background: var(--coral-deep); }
+.key svg { width: 22px; height: 22px; margin: 4px auto 3px; }
+.shake { animation: shake 0.4s ease; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-9px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(4px); } }
+.math-card.wrong .math-eq { color: var(--error); }
+.chal-title { font-family: var(--font-round); font-size: 17px; font-weight: 700; color: #1A1620; margin-top: 8px; }
+.chal-sub { font-size: 13px; color: #6E6873; margin-top: 2px; min-height: 20px; }
+
+/* Challenge: memory */
+.mem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: min(84%, 250px); margin: 16px auto 0; }
+.mem-tile {
+  aspect-ratio: 1; border-radius: 18px;
+  background: #FFFFFF; box-shadow: 0 4px 12px rgba(26,22,32,0.07);
+  transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+.mem-tile:active { transform: scale(0.94); }
+.mem-tile.lit { background: linear-gradient(135deg, var(--sun-yellow), var(--sun-orange)); box-shadow: 0 6px 20px rgba(255,138,74,0.5); transform: scale(1.05); }
+.mem-tile.good { background: linear-gradient(135deg, var(--coral), var(--amber)); }
+.mem-tile.bad { background: var(--error); }
+.mem-tile:disabled { cursor: default; }
+
+/* Challenge: pro previews */
+.pro-view { width: 100%; margin-top: 12px; position: relative; }
+.viewfinder {
+  width: 100%; aspect-ratio: 3.1 / 3;
+  border-radius: var(--r-md);
+  background:
+    radial-gradient(90% 90% at 30% 20%, #3a3440, #211d28 60%, #17151C);
+  position: relative; overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(245,243,239,0.09);
+}
+.viewfinder .corners { position: absolute; inset: 14%; }
+.viewfinder .corners i { position: absolute; width: 26px; height: 26px; border: 3px solid rgba(255,210,74,0.95); }
+.viewfinder .corners i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 8px 0 0 0; }
+.viewfinder .corners i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 8px 0 0; }
+.viewfinder .corners i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 8px; }
+.viewfinder .corners i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; }
+.scanline {
+  position: absolute; left: 10%; right: 10%; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,210,74,0.9), transparent);
+  animation: scan 2.6s ease-in-out infinite;
+}
+@keyframes scan { 0%,100% { top: 20%; } 50% { top: 78%; } }
+.vf-icon { position: absolute; inset: 0; display: grid; place-items: center; }
+.vf-icon svg { width: 54px; height: 54px; color: rgba(245,243,239,0.5); }
+.rep-counter { position: absolute; inset: 0; display: grid; place-items: center; }
+.rep-num { font-family: var(--font-round); font-size: 76px; font-weight: 800; color: #F5F3EF; line-height: 1; font-variant-numeric: tabular-nums; }
+.rep-label { font-family: var(--font-round); font-size: 13px; font-weight: 600; color: rgba(245,243,239,0.6); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 6px; }
+.rep-ring { position: absolute; inset: 0; margin: auto; width: 168px; height: 168px; transform: rotate(-90deg); }
+.rep-ring circle { fill: none; stroke-width: 5; }
+.rep-ring .track { stroke: rgba(245,243,239,0.12); }
+.rep-ring .fill { stroke: var(--sun-orange); stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+.pro-pill {
+  position: absolute; top: 12px; right: 12px;
+  display: inline-flex; align-items: center; gap: 5px;
+  background: linear-gradient(135deg, var(--sun-yellow), var(--sun-orange));
+  color: #4A2A10; font-family: var(--font-round); font-weight: 800; font-size: 12px;
+  padding: 5px 11px; border-radius: 999px; letter-spacing: 0.04em;
+}
+.pro-pill svg { width: 11px; height: 11px; }
+@media (prefers-reduced-motion: reduce) { .scanline { animation: none; top: 50%; } }
+
+/* Snoozing screen */
+.scr-snooze { justify-content: center; gap: 6px; }
+.snooze-ring { position: relative; width: 132px; height: 132px; margin-bottom: 14px; }
+.snooze-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.snooze-ring circle { fill: none; stroke-width: 7; }
+.snooze-ring .track { stroke: rgba(26,22,32,0.1); }
+.snooze-ring .fill { stroke: var(--coral); stroke-linecap: round; transition: stroke-dashoffset 0.95s linear; }
+.snooze-count { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-round); font-size: 44px; font-weight: 800; color: #1A1620; font-variant-numeric: tabular-nums; }
+.snooze-z { position: absolute; font-family: var(--font-round); font-weight: 800; color: rgba(26,22,32,0.25); animation: zdrift 3.2s ease-in-out infinite; }
+
+/* Dismissed screen */
+.scr-done { justify-content: center; gap: 4px; overflow: hidden; }
+.scr-done .bigsun { width: 108px; height: 108px; margin-bottom: 16px; animation: sunpop 0.7s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes sunpop { 0% { transform: translateY(60px) scale(0.5); opacity: 0; } 100% { transform: none; opacity: 1; } }
+.done-title { font-family: var(--font-round); font-size: 30px; font-weight: 800; color: #1A1620; }
+.done-streak {
+  display: inline-flex; align-items: center; gap: 7px; margin-top: 10px;
+  background: rgba(255,122,89,0.12); color: var(--coral-ink);
+  font-family: var(--font-round); font-weight: 700; font-size: 15px;
+  padding: 8px 16px; border-radius: 999px;
+}
+.done-streak svg { width: 15px; height: 15px; }
+.done-sub { color: #6E6873; font-size: 13.5px; margin-top: 10px; }
+.again-btn { margin-top: 22px; font-family: var(--font-round); font-weight: 700; font-size: 15px; color: #B8431E; background: rgba(255,122,89,0.12); padding: 12px 24px; border-radius: 999px; }
+.confetti { position: absolute; width: 9px; height: 9px; border-radius: 2px; top: -12px; animation: confetti-fall 1.6s ease-in forwards; }
+@keyframes confetti-fall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(560px) rotate(540deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .confetti { display: none; } .scr-done .bigsun { animation: none; } }
+
+/* ============================================================
+   SUNRISE SCROLL SCENE
+   ============================================================ */
+.sunrise { height: 175vh; position: relative; background: var(--night-bg); }
+.sunrise-pin { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+.sky-layer { position: absolute; inset: 0; }
+.sky-night {
+  background:
+    radial-gradient(100% 65% at 50% 118%, rgba(80,55,80,0.45), transparent 60%),
+    var(--night-bg);
+}
+.sky-glow {
+  opacity: 0;
+  background:
+    radial-gradient(85% 62% at 50% 104%, rgba(255,138,74,0.75), rgba(255,122,89,0.32) 45%, transparent 72%);
+}
+.sky-day { opacity: 0; background: var(--day-bg); }
+.sunrise-stars { position: absolute; inset: 0; }
+.scene-sun {
+  position: absolute; left: 50%; bottom: 0;
+  width: min(42vmin, 330px); height: min(42vmin, 330px);
+  transform: translate(-50%, 105%);
+  will-change: transform;
+  filter: drop-shadow(0 0 60px rgba(255,178,122,0.55));
+}
+.scene-hills { position: absolute; left: 0; right: 0; bottom: -2px; }
+.scene-hills svg { width: 100%; height: auto; }
+.hills-day { position: absolute; left: 0; right: 0; bottom: -2px; opacity: 0; }
+.scene-text {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  text-align: center; padding: 0 24px min(32vh, 300px);
+}
+.scene-text .inner { max-width: 700px; }
+.scene-text h2 { font-size: clamp(32px, 5.4vw, 58px); }
+.scene-text p { margin-top: 16px; font-size: 18px; }
+.scene-a { color: var(--night-text); }
+.scene-a p { color: var(--night-text2); }
+.scene-b { color: var(--day-text); opacity: 0; }
+.scene-b p { color: var(--day-text2); }
+
+/* ============================================================
+   HOW IT WORKS
+   ============================================================ */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.step-card {
+  background: var(--day-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--day-hairline);
+  padding: 34px 30px 32px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.step-card:hover { transform: translateY(-5px); box-shadow: var(--card-shadow-big); }
+.step-num {
+  font-family: var(--font-round); font-size: 62px; font-weight: 800; line-height: 1;
+  background: linear-gradient(150deg, var(--sun-yellow), var(--coral));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  opacity: 0.95;
+}
+.step-card h3 { margin-top: 18px; }
+.step-card p { color: var(--day-text2); margin-top: 10px; font-size: 15.5px; }
+.step-icon { position: absolute; top: 30px; right: 28px; width: 42px; height: 42px; color: var(--coral); opacity: 0.9; }
+.loop-note {
+  margin-top: 34px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-family: var(--font-round); font-weight: 600; font-size: 15px; color: var(--day-text2);
+  flex-wrap: wrap; text-align: center;
+}
+.loop-note .loop-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(255,122,89,0.1); color: var(--coral-ink);
+  border-radius: 999px; padding: 8px 16px;
+}
+.loop-note svg { width: 15px; height: 15px; }
+@media (max-width: 900px) { .steps { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   DEMO SECTION
+   ============================================================ */
+.demo-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 56px; align-items: center; }
+@media (max-width: 960px) { .demo-grid { grid-template-columns: 1fr; gap: 40px; } }
+.demo-copy p.lead { color: var(--day-text2); font-size: 18px; margin-top: 14px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.chip {
+  font-family: var(--font-round); font-weight: 700; font-size: 15px;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px; border-radius: 999px;
+  border: 1.5px solid var(--day-hairline);
+  color: var(--day-text);
+  background: var(--day-surface);
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+.chip svg { width: 17px; height: 17px; }
+.chip:hover { transform: translateY(-1px); }
+.chip[aria-pressed="true"] { border-color: var(--coral); background: rgba(255,122,89,0.1); color: var(--coral-ink); }
+.chip .mini-pro {
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.05em;
+  background: linear-gradient(135deg, var(--sun-yellow), var(--sun-orange));
+  color: #4A2A10; border-radius: 999px; padding: 2px 7px;
+}
+.diff-row { margin-top: 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.diff-label { font-family: var(--font-round); font-size: 14px; font-weight: 600; color: var(--day-text2); }
+.seg {
+  display: inline-flex; background: var(--day-surface); border: 1.5px solid var(--day-hairline);
+  border-radius: 999px; padding: 4px; gap: 2px;
+}
+.seg button {
+  font-family: var(--font-round); font-size: 13.5px; font-weight: 700;
+  padding: 7px 15px; border-radius: 999px; color: var(--day-text2);
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.seg button[aria-pressed="true"] { background: linear-gradient(135deg, var(--coral), var(--coral-deep)); color: var(--btn-label); }
+.demo-fineprint { margin-top: 26px; font-size: 13.5px; color: var(--day-text2); display: flex; gap: 8px; align-items: flex-start; }
+.demo-fineprint svg { width: 15px; height: 15px; flex: none; margin-top: 3px; color: var(--coral); }
+
+/* ============================================================
+   CHALLENGE CARDS
+   ============================================================ */
+.chal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+@media (max-width: 1000px) { .chal-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .chal-grid { grid-template-columns: 1fr; } }
+.chal-card {
+  background: var(--day-surface); border-radius: var(--r-lg);
+  border: 1px solid var(--day-hairline);
+  box-shadow: var(--card-shadow);
+  padding: 28px 26px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+.chal-card:hover { transform: translateY(-5px); box-shadow: var(--card-shadow-big); }
+.chal-icon {
+  width: 54px; height: 54px; border-radius: 18px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, rgba(255,210,74,0.18), rgba(255,122,89,0.18));
+  color: var(--coral-deep);
+}
+.chal-icon svg { width: 27px; height: 27px; }
+.chal-card h3 { margin-top: 18px; font-size: 19px; }
+.chal-card p { color: var(--day-text2); font-size: 14.5px; margin-top: 6px; }
+.chal-card .pro-tag {
+  position: absolute; top: 22px; right: 22px;
+  font-family: var(--font-round); font-size: 11px; font-weight: 800; letter-spacing: 0.06em;
+  background: linear-gradient(135deg, var(--sun-yellow), var(--sun-orange));
+  color: #4A2A10; padding: 4px 10px; border-radius: 999px;
+}
+.chal-note { text-align: center; margin-top: 30px; color: var(--day-text2); font-family: var(--font-round); font-weight: 600; font-size: 15px; }
+
+/* ============================================================
+   STREAKS
+   ============================================================ */
+.streak-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+@media (max-width: 960px) { .streak-grid { grid-template-columns: 1fr; gap: 40px; } }
+.streak-copy p { color: var(--day-text2); font-size: 17.5px; margin-top: 16px; max-width: 44ch; }
+.streak-points { margin-top: 26px; display: flex; flex-direction: column; gap: 14px; }
+.streak-points li { list-style: none; display: flex; gap: 12px; align-items: flex-start; font-size: 15.5px; color: var(--day-text); }
+.streak-points svg { width: 20px; height: 20px; color: var(--coral); flex: none; margin-top: 2px; }
+.streak-card {
+  background: var(--day-surface); border-radius: var(--r-lg);
+  border: 1px solid var(--day-hairline);
+  box-shadow: var(--card-shadow-big);
+  padding: 34px 32px;
+  max-width: 470px;
+  margin: 0 auto;
+  width: 100%;
+}
+.streak-top { display: flex; align-items: center; gap: 20px; }
+.flame-wrap { width: 76px; height: 76px; position: relative; display: grid; place-items: center; }
+.flame-wrap svg { width: 58px; height: 58px; }
+.flame-wrap::before {
+  content: ""; position: absolute; inset: 4px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,138,74,0.28), transparent 70%);
+  animation: flamebreathe 2.4s ease-in-out infinite;
+}
+@keyframes flamebreathe { 0%,100% { transform: scale(0.92); opacity: 0.7; } 50% { transform: scale(1.12); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .flame-wrap::before { animation: none; } }
+.streak-num { font-family: var(--font-round); font-size: 56px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.streak-sub { font-family: var(--font-round); font-weight: 600; color: var(--day-text2); font-size: 15px; }
+.freeze-chip {
+  margin-left: auto; align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(90,170,255,0.13); color: var(--freeze-ink);
+  font-family: var(--font-round); font-size: 13px; font-weight: 700;
+  padding: 7px 13px; border-radius: 999px;
+}
+.freeze-chip svg { width: 13px; height: 13px; }
+.week-row { display: flex; justify-content: space-between; margin-top: 30px; }
+.week-day { display: flex; flex-direction: column; align-items: center; gap: 8px; font-family: var(--font-round); font-size: 12px; font-weight: 700; color: var(--day-text2); }
+.week-dot {
+  width: 37px; height: 37px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1.5px solid var(--day-hairline);
+  color: transparent;
+  transition: background 0.4s ease, color 0.4s ease, transform 0.4s ease;
+}
+.week-dot svg { width: 15px; height: 15px; }
+.week-day.done .week-dot { background: linear-gradient(135deg, var(--coral), var(--amber)); border-color: transparent; color: #FFF8F4; }
+.week-day.frozen .week-dot { background: rgba(90,170,255,0.16); border-color: transparent; color: var(--freeze-ink); }
+.week-day.today .week-dot { border: 2px solid var(--coral); color: var(--coral); animation: todaypulse 2s ease-in-out infinite; }
+@keyframes todaypulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,122,89,0.35); } 50% { box-shadow: 0 0 0 7px rgba(255,122,89,0); } }
+@media (prefers-reduced-motion: reduce) { .week-day.today .week-dot { animation: none; } }
+.insights-mini { margin-top: 34px; border-top: 1px solid var(--day-hairline); padding-top: 24px; }
+.insights-title { font-family: var(--font-round); font-size: 14px; font-weight: 700; color: var(--day-text2); display: flex; justify-content: space-between; }
+.insights-title b { color: var(--day-text); }
+.bars { display: flex; align-items: flex-end; gap: 9px; height: 110px; margin-top: 18px; }
+.bar { flex: 1; position: relative; display: flex; align-items: flex-end; height: 100%; }
+.bar i {
+  display: block; width: 100%;
+  border-radius: 8px 8px 4px 4px;
+  background: linear-gradient(180deg, var(--amber), var(--coral));
+  height: 0;
+  transition: height 0.9s cubic-bezier(0.22,0.9,0.3,1);
+  transition-delay: var(--d, 0s);
+}
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+.bar:hover i, .bar:focus-visible i { filter: brightness(1.08); }
+.bar .tip {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  font-family: var(--font-round); font-size: 11.5px; font-weight: 700;
+  background: var(--day-text); color: var(--day-bg);
+  border-radius: 8px; padding: 3px 8px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+}
+.bar:hover .tip, .bar:focus-visible .tip { opacity: 1; }
+
+/* ============================================================
+   PRIVACY
+   ============================================================ */
+.privacy-band {
+  background: var(--day-surface);
+  border-top: 1px solid var(--day-hairline);
+  border-bottom: 1px solid var(--day-hairline);
+}
+.priv-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 52px; }
+@media (max-width: 960px) { .priv-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 540px) { .priv-grid { grid-template-columns: 1fr; } }
+.priv-tile { text-align: center; padding: 30px 18px; border-radius: var(--r-md); background: var(--day-bg); border: 1px solid var(--day-hairline); }
+.priv-tile .p-icon { width: 50px; height: 50px; margin: 0 auto; border-radius: 16px; display: grid; place-items: center; background: rgba(255,122,89,0.1); color: var(--coral-deep); }
+.priv-tile .p-icon svg { width: 25px; height: 25px; }
+.priv-tile h3 { font-size: 16.5px; margin-top: 16px; }
+.priv-tile p { font-size: 13.5px; color: var(--day-text2); margin-top: 6px; }
+.priv-lead { max-width: 640px; margin: 0 auto; text-align: center; color: var(--day-text2); font-size: 17.5px; }
+
+/* ============================================================
+   PRICING
+   ============================================================ */
+.pro-unlocks { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 26px auto 54px; max-width: 720px; }
+.unlock-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-round); font-weight: 600; font-size: 14.5px;
+  background: var(--day-surface); border: 1px solid var(--day-hairline);
+  padding: 10px 18px; border-radius: 999px; color: var(--day-text);
+  box-shadow: var(--card-shadow);
+}
+.unlock-chip svg { width: 16px; height: 16px; color: var(--coral); }
+.plans { display: grid; grid-template-columns: repeat(2, minmax(0, 400px)); gap: 26px; justify-content: center; align-items: stretch; }
+@media (max-width: 820px) { .plans { grid-template-columns: minmax(0, 420px); } }
+.plan {
+  background: var(--day-surface); border-radius: var(--r-lg);
+  border: 1.5px solid var(--day-hairline);
+  box-shadow: var(--card-shadow);
+  padding: 38px 34px;
+  display: flex; flex-direction: column;
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.plan:hover { transform: translateY(-5px); box-shadow: var(--card-shadow-big); }
+.plan-best { border-color: var(--coral); box-shadow: 0 18px 44px rgba(255,122,89,0.18); }
+.best-badge {
+  position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--coral), var(--coral-deep));
+  color: var(--btn-label); font-family: var(--font-round); font-size: 12.5px; font-weight: 800;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 7px 18px; border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(255,122,89,0.4);
+}
+.plan-name { font-family: var(--font-round); font-weight: 700; font-size: 17px; color: var(--day-text2); }
+.plan-price { font-family: var(--font-round); font-size: 52px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; margin-top: 14px; }
+.plan-price .unit { font-size: 18px; font-weight: 600; color: var(--day-text2); letter-spacing: 0; }
+.plan-meta { margin-top: 10px; display: flex; align-items: center; gap: 10px; min-height: 28px; }
+.plan-permonth { font-family: var(--font-round); font-weight: 600; font-size: 14.5px; color: var(--day-text2); }
+.save-chip { font-family: var(--font-round); font-size: 12.5px; font-weight: 800; background: rgba(255,122,89,0.13); color: var(--coral-ink); padding: 4px 11px; border-radius: 999px; }
+.plan-features { margin: 26px 0 30px; display: flex; flex-direction: column; gap: 12px; }
+.plan-features li { list-style: none; display: flex; gap: 10px; align-items: flex-start; font-size: 15px; color: var(--day-text); }
+.plan-features svg { width: 18px; height: 18px; color: var(--coral); flex: none; margin-top: 3px; }
+.plan .btn { margin-top: auto; width: 100%; }
+.plans-fineprint { text-align: center; color: var(--day-text2); font-size: 13.5px; margin-top: 30px; max-width: 560px; margin-left: auto; margin-right: auto; }
+
+/* ============================================================
+   FAQ
+   ============================================================ */
+.faq-list { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+.faq-item {
+  background: var(--day-surface); border: 1px solid var(--day-hairline);
+  border-radius: var(--r-md); box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition: border-color 0.25s ease;
+}
+.faq-item[open] { border-color: rgba(255,122,89,0.45); }
+.faq-item summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  padding: 22px 26px;
+  font-family: var(--font-round); font-weight: 700; font-size: 17px;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-plus { flex: none; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,122,89,0.12); color: var(--coral-ink); display: grid; place-items: center; transition: transform 0.3s ease; }
+.faq-plus svg { width: 14px; height: 14px; }
+.faq-item[open] .faq-plus { transform: rotate(45deg); }
+.faq-body { padding: 0 26px 24px; color: var(--day-text2); font-size: 15.5px; max-width: 60ch; }
+
+/* ============================================================
+   FINAL CTA + FOOTER
+   ============================================================ */
+.final-cta {
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(120% 100% at 50% 118%, rgba(255,210,74,0.5), rgba(255,122,89,0.34) 42%, transparent 72%),
+    var(--night-bg);
+  color: var(--night-text);
+  text-align: center;
+  padding: 130px 0 150px;
+}
+.final-cta .bigsun { width: 90px; height: 90px; margin: 0 auto 30px; filter: drop-shadow(0 0 44px rgba(255,178,122,0.6)); }
+.final-cta p { color: var(--night-text2); font-size: 18px; margin: 18px auto 40px; max-width: 44ch; }
+.footer { background: var(--night-bg); color: var(--night-text); border-top: 1px solid var(--night-hairline); padding: 56px 0 46px; }
+.footer .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 26px; }
+.footer-tag { color: var(--night-text2); font-size: 14px; width: 100%; margin-top: -8px; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 22px; margin-left: auto; }
+.footer-links a { color: var(--night-text2); font-size: 14px; text-decoration: none; transition: color 0.2s ease; }
+.footer-links a:hover { color: var(--night-text); }
+.footer-copy { width: 100%; color: var(--night-text2); font-size: 13px; border-top: 1px solid var(--night-hairline); padding-top: 22px; margin-top: 8px; }
+@media (max-width: 700px) { .footer-links { margin-left: 0; } }
+
+/* Hero responsive */
+@media (max-width: 960px) {
+  .hero { padding-bottom: 60px; }
+  .hero .wrap { grid-template-columns: 1fr; gap: 56px; text-align: center; }
+  .hero-copy .eyebrow { justify-content: center; }
+  .hero-sub { margin-left: auto; margin-right: auto; }
+  .hero-ctas { justify-content: center; }
+  .hero-note { justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- Shared SVG symbols -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="sunGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD24A"/>
+      <stop offset="1" stop-color="#FF8A4A"/>
+    </linearGradient>
+    <linearGradient id="flameGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD24A"/>
+      <stop offset="1" stop-color="#FF7A59"/>
+    </linearGradient>
+
+    <!-- The sleepy sun: geometry ported from SunriseMark.swift -->
+    <symbol id="sleepy-sun" viewBox="0 0 100 100">
+      <g stroke="#FFC24A" stroke-width="5" stroke-linecap="round">
+        <line x1="50" y1="14" x2="50" y2="7.4"/>
+        <line x1="75.46" y1="24.54" x2="80.12" y2="19.88"/>
+        <line x1="86" y1="50" x2="92.6" y2="50"/>
+        <line x1="75.46" y1="75.46" x2="80.12" y2="80.12"/>
+        <line x1="50" y1="86" x2="50" y2="92.6"/>
+        <line x1="24.54" y1="75.46" x2="19.88" y2="80.12"/>
+        <line x1="14" y1="50" x2="7.4" y2="50"/>
+        <line x1="24.54" y1="24.54" x2="19.88" y2="19.88"/>
+      </g>
+      <circle cx="50" cy="50" r="30" fill="url(#sunGrad)"/>
+      <circle cx="36.2" cy="56" r="4.8" fill="#FF8A6A" opacity="0.55"/>
+      <circle cx="63.8" cy="56" r="4.8" fill="#FF8A6A" opacity="0.55"/>
+      <g stroke="#7A4A2A" stroke-width="3.5" stroke-linecap="round" fill="none">
+        <path d="M 33.5 48.2 Q 38 53.15 42.5 48.2"/>
+        <path d="M 57.5 48.2 Q 62 53.15 66.5 48.2"/>
+        <path d="M 41.75 60.2 Q 50 68.45 58.25 60.2"/>
+      </g>
+    </symbol>
+
+    <symbol id="i-bell" viewBox="0 0 24 24">
+      <path d="M12 3c-3.3 0-5.6 2.6-5.6 5.9 0 3.6-1 4.9-1.9 5.9-.4.5-.1 1.2.6 1.2h13.8c.7 0 1-.7.6-1.2-.9-1-1.9-2.3-1.9-5.9C17.6 5.6 15.3 3 12 3Z" fill="currentColor"/>
+      <path d="M9.8 18.5a2.3 2.3 0 0 0 4.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="M4.5 12.5 10 18 19.5 6.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="i-back" viewBox="0 0 24 24">
+      <path d="M9 5H18a2.5 2.5 0 0 1 0 10H7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none" transform="translate(0,2)"/>
+      <path d="m10 3.5-4 3.5 4 3.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="translate(0,2)"/>
+    </symbol>
+    <symbol id="i-math" viewBox="0 0 24 24">
+      <path d="M3 13.5 5.5 12l2.6 7L12 4h9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="m15 11 5 7m0-7-5 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="i-brain" viewBox="0 0 24 24">
+      <path d="M11 4.5a3 3 0 0 0-5.7 1A3.2 3.2 0 0 0 3.5 9a3.4 3.4 0 0 0 .4 6.3A3.2 3.2 0 0 0 8.5 19c1.2 0 2.5-.9 2.5-2.4Zm0 0V17m2-12.5a3 3 0 0 1 5.7 1A3.2 3.2 0 0 1 20.5 9a3.4 3.4 0 0 1-.4 6.3A3.2 3.2 0 0 1 15.5 19c-1.2 0-2.5-.9-2.5-2.4Zm0 0V17" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24">
+      <path d="M4 8.2C4 7 5 6 6.2 6h1.6l1.3-1.7c.3-.4.7-.6 1.2-.6h3.4c.5 0 .9.2 1.2.6L16.2 6h1.6C19 6 20 7 20 8.2v8.6c0 1.2-1 2.2-2.2 2.2H6.2C5 19 4 18 4 16.8Z" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linejoin="round"/>
+      <circle cx="12" cy="12.3" r="3.4" stroke="currentColor" stroke-width="1.9" fill="none"/>
+    </symbol>
+    <symbol id="i-pushup" viewBox="0 0 24 24">
+      <circle cx="18.6" cy="7.2" r="1.9" fill="currentColor"/>
+      <path d="M3 18h18M5.5 18v-3.2M5 14.6l6.8-3.4c1-.5 2.1-.2 2.7.7l1.6 2.4c.5.8 1.5 1.1 2.4.8l2-.8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24">
+      <path d="M12 2.5s1 2.6-1.4 5.6C8.3 11 6 12.4 6 15.4A6 6 0 0 0 12 21a6 6 0 0 0 6-5.6c.2-3.3-1.8-5.1-2.9-7.4-.4 1-1.4 1.8-2.3 1.6C13.3 8 12.4 5.3 12 2.5Z" fill="url(#flameGrad)"/>
+    </symbol>
+    <symbol id="i-snow" viewBox="0 0 24 24">
+      <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M12 3l-2 2m2-2 2 2M12 21l-2-2m2 2 2-2M4.2 7.5l.7 2.7m-.7-2.7 2.7-.7M19.8 16.5l-.7-2.7m.7 2.7-2.7.7M4.2 16.5l2.7.7m-2.7-.7.7-2.7M19.8 7.5l-2.7-.7m2.7.7-.7 2.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24">
+      <path d="M12 3 5 5.8v5.4c0 4.4 3 8 7 9.8 4-1.8 7-5.4 7-9.8V5.8Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" fill="none"/>
+      <path d="m9 11.8 2.2 2.2L15.4 9.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </symbol>
+    <symbol id="i-eye-slash" viewBox="0 0 24 24">
+      <path d="M4 4.5 20 19.5M9.9 6.4A8.7 8.7 0 0 1 12 6.2c4.2 0 7.6 3 9 5.8-.6 1.2-1.6 2.5-2.9 3.6M6 8.3C4.6 9.4 3.6 10.8 3 12c1.4 2.8 4.8 5.8 9 5.8 1 0 2-.2 2.9-.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M10 10.3a2.7 2.7 0 0 0 3.8 3.8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="i-iphone" viewBox="0 0 24 24">
+      <rect x="7" y="2.8" width="10" height="18.4" rx="2.6" stroke="currentColor" stroke-width="1.9" fill="none"/>
+      <path d="M10.5 5h3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-cloud-lock" viewBox="0 0 24 24">
+      <path d="M7.5 18A4.5 4.5 0 0 1 7 9a5.5 5.5 0 0 1 10.6 1.4A4 4 0 0 1 17.5 18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" fill="none"/>
+      <rect x="9.6" y="13.6" width="4.8" height="4" rx="1.1" stroke="currentColor" stroke-width="1.6" fill="none"/>
+      <path d="M10.8 13.4v-1a1.2 1.2 0 0 1 2.4 0v1" stroke="currentColor" stroke-width="1.6" fill="none"/>
+    </symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24">
+      <path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M18 2.8v4h-4M6 21.2v-4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24">
+      <rect x="5.5" y="10.5" width="13" height="9.5" rx="2.6" fill="currentColor"/>
+      <path d="M8.5 10V8a3.5 3.5 0 0 1 7 0v2" stroke="currentColor" stroke-width="2.2" fill="none"/>
+    </symbol>
+    <symbol id="i-info" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="8.6" stroke="currentColor" stroke-width="1.9" fill="none"/>
+      <path d="M12 11v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="12" cy="7.8" r="1.2" fill="currentColor"/>
+    </symbol>
+
+    <!-- App Store badge -->
+    <symbol id="store-badge" viewBox="0 0 160 54">
+      <rect x="0.75" y="0.75" width="158.5" height="52.5" rx="10" fill="#000" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>
+      <path transform="translate(13,13) scale(1.18)" fill="#fff" d="M16.4 12.6c0-2.5 2-3.7 2.1-3.8-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.3-.9-1.7 0-3.2 1-4.1 2.5-1.7 3-.4 7.5 1.3 9.9.8 1.2 1.8 2.5 3.1 2.5 1.2-.1 1.7-.8 3.2-.8s1.9.8 3.3.8c1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.4-2.8-.1-.1-2.7-1.1-2.7-3.9ZM13.9 5.3c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1.1.1 2.2-.6 2.8-1.4Z"/>
+      <text x="40" y="22" fill="#fff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10.5" letter-spacing="0.2">Download on the</text>
+      <text x="40" y="41" fill="#fff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="19" font-weight="600">App Store</text>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ============================================================ NAV -->
+<nav class="nav" id="nav" aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Rize, back to top">
+      <svg aria-hidden="true"><use href="#sleepy-sun"/></svg>
+      <span class="brand-name">Rize</span>
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#demo">Try it</a>
+      <a href="#streaks">Streaks</a>
+      <a href="#pro">Pro</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="btn btn-primary nav-cta" href="#" data-cfg-href="appStoreUrl">Get the app</a>
+  </div>
+</nav>
+
+<!-- ============================================================ HERO -->
+<header class="hero" id="top">
+  <div class="stars" id="hero-stars" aria-hidden="true"></div>
+  <span class="hero-zzz" style="top:24%;left:12%;font-size:30px;animation-delay:0s" aria-hidden="true">z</span>
+  <span class="hero-zzz" style="top:34%;left:7%;font-size:44px;animation-delay:2.2s" aria-hidden="true">Z</span>
+  <span class="hero-zzz" style="top:18%;right:14%;font-size:36px;animation-delay:4.1s" aria-hidden="true">z</span>
+  <div class="wrap">
+    <div class="hero-copy">
+      <span class="eyebrow">Alarm app for iPhone</span>
+      <h1>The alarm you <span class="accent">can't sleep</span> through</h1>
+      <p class="hero-sub">Rize wakes your brain, not just your phone. Solve a quick challenge to turn the alarm off, or it rings right back.</p>
+      <div class="hero-ctas">
+        <a class="store-badge" href="#" data-cfg-href="appStoreUrl" aria-label="Download Rize on the App Store">
+          <svg role="img" aria-hidden="true"><use href="#store-badge"/></svg>
+        </a>
+        <a class="btn btn-ghost-dark" href="#demo">Try it right here</a>
+      </div>
+      <p class="hero-note">
+        <svg aria-hidden="true"><use href="#i-shield"/></svg>
+        No ads, no tracking, free to start. iOS 26 and later.
+      </p>
+    </div>
+    <div class="phone-scene glow-behind">
+      <div class="phone" id="hero-phone">
+        <div class="island" aria-hidden="true"></div>
+        <div class="phone-screen">
+          <div class="app-screen scr-ring active" aria-label="Rize alarm ringing screen preview">
+            <div class="ring-top">
+              <div class="app-lockup">
+                <svg aria-hidden="true"><use href="#sleepy-sun"/></svg>
+                <span>Rize</span>
+              </div>
+              <div class="ring-label" id="hero-ring-label">Morning alarm</div>
+              <div class="ring-time live-time" aria-hidden="true">7:00</div>
+              <div class="ring-date">That's your real time, by the way</div>
+            </div>
+            <div class="ring-bell" aria-hidden="true">
+              <svg><use href="#i-bell"/></svg>
+            </div>
+            <div class="ring-bottom">
+              <a class="solve-btn" href="#demo" style="text-decoration:none; text-align:center">Solve to stop</a>
+              <div class="ring-hint">No snooze. No mercy. Just mornings.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================ SUNRISE SCENE -->
+<section class="sunrise" id="sunrise" aria-label="Sunrise">
+  <div class="sunrise-pin">
+    <div class="sky-layer sky-night" id="sky-night"></div>
+    <div class="sky-layer sky-glow" id="sky-glow"></div>
+    <div class="sky-layer sky-day" id="sky-day"></div>
+    <div class="sunrise-stars stars" id="scene-stars" aria-hidden="true"></div>
+    <svg class="scene-sun" id="scene-sun" aria-hidden="true"><use href="#sleepy-sun"/></svg>
+    <div class="scene-hills" id="hills-night" aria-hidden="true">
+      <svg viewBox="0 0 1440 190" preserveAspectRatio="none">
+        <path d="M0 190 L0 120 Q 240 40 520 96 Q 760 140 1000 84 Q 1240 34 1440 96 L1440 190 Z" fill="#08070A"/>
+      </svg>
+    </div>
+    <div class="scene-hills hills-day" id="hills-day" aria-hidden="true">
+      <svg viewBox="0 0 1440 190" preserveAspectRatio="none">
+        <path d="M0 190 L0 120 Q 240 40 520 96 Q 760 140 1000 84 Q 1240 34 1440 96 L1440 190 Z" fill="var(--hill-day)"/>
+      </svg>
+    </div>
+    <div class="scene-text scene-a" id="scene-a">
+      <div class="inner">
+        <h2>6:30 AM. It rings.</h2>
+        <p>Every other alarm dies with one tap. Yours is about to be different.</p>
+      </div>
+    </div>
+    <div class="scene-text scene-b" id="scene-b">
+      <div class="inner">
+        <h2>By the time you solve it, you're awake.</h2>
+        <p>That's the whole trick. Your brain switches on before your thumb can betray you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="day">
+
+<!-- ============================================================ HOW IT WORKS -->
+<section class="section-pad" id="how">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">How it works</span>
+      <h2>One tap can't save you. Three steps will.</h2>
+    </div>
+    <div class="steps">
+      <article class="step-card reveal" style="--d:0s">
+        <svg class="step-icon" aria-hidden="true"><use href="#i-bell"/></svg>
+        <div class="step-num rounded">01</div>
+        <h3>It rings</h3>
+        <p>Your alarm goes off like any other. Big time, warm sound, one button. So far, so familiar.</p>
+      </article>
+      <article class="step-card reveal" style="--d:0.12s">
+        <svg class="step-icon" aria-hidden="true"><use href="#i-brain"/></svg>
+        <div class="step-num rounded">02</div>
+        <h3>You solve</h3>
+        <p>Tap Solve and a quick challenge opens. Math, memory, a photo, or push-ups. It proves your brain is actually on.</p>
+      </article>
+      <article class="step-card reveal" style="--d:0.24s">
+        <svg class="step-icon" aria-hidden="true"><use href="#i-repeat"/></svg>
+        <div class="step-num rounded">03</div>
+        <h3>No escape</h3>
+        <p>Leave without finishing and Rize re-arms itself. About a minute later, it rings again. Snoozing stops working.</p>
+      </article>
+    </div>
+    <div class="loop-note reveal">
+      <span class="loop-chip"><svg aria-hidden="true"><use href="#i-repeat"/></svg> ring, solve or it repeats</span>
+      <span>That loop is the entire product. It's very hard to argue with.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ DEMO -->
+<section class="section-pad" id="demo">
+  <div class="wrap">
+    <div class="demo-grid">
+      <div class="demo-copy">
+        <span class="eyebrow reveal">Live demo</span>
+        <h2 class="reveal" style="--d:0.08s">Don't take our word for it. Try to turn it off.</h2>
+        <p class="lead reveal" style="--d:0.16s">This phone is running the real wake-up flow. Pick a challenge, tap Solve, and see if you could escape your own alarm.</p>
+        <div class="chip-row reveal" style="--d:0.24s" role="group" aria-label="Choose a demo challenge">
+          <button class="chip" data-chal="math" aria-pressed="true">
+            <svg aria-hidden="true"><use href="#i-math"/></svg> Math
+          </button>
+          <button class="chip" data-chal="memory" aria-pressed="false">
+            <svg aria-hidden="true"><use href="#i-brain"/></svg> Memory
+          </button>
+          <button class="chip" data-chal="photo" aria-pressed="false">
+            <svg aria-hidden="true"><use href="#i-camera"/></svg> Photo <span class="mini-pro">PRO</span>
+          </button>
+          <button class="chip" data-chal="pushups" aria-pressed="false">
+            <svg aria-hidden="true"><use href="#i-pushup"/></svg> Push-ups <span class="mini-pro">PRO</span>
+          </button>
+        </div>
+        <div class="diff-row reveal" style="--d:0.3s">
+          <span class="diff-label" id="diff-label">Difficulty</span>
+          <div class="seg" role="group" aria-labelledby="diff-label">
+            <button data-diff="easy" aria-pressed="false">Gentle</button>
+            <button data-diff="medium" aria-pressed="true">Standard</button>
+            <button data-diff="hard" aria-pressed="false">Ruthless <span class="mini-pro">PRO</span></button>
+          </div>
+        </div>
+        <p class="demo-fineprint reveal" style="--d:0.36s">
+          <svg aria-hidden="true"><use href="#i-info"/></svg>
+          <span>If you give up, watch what happens. In the app the alarm re-arms and rings again about a minute later. The demo shortens the wait so you don't fall back asleep.</span>
+        </p>
+      </div>
+
+      <div class="phone-scene glow-behind reveal" style="--d:0.15s">
+        <div class="phone">
+          <div class="island" aria-hidden="true"></div>
+          <div class="phone-screen demo-screen-bg" id="demo-screen">
+
+            <!-- RINGING -->
+            <div class="app-screen scr-ring active" data-screen="ringing">
+              <div class="ring-top">
+                <div class="app-lockup">
+                  <svg aria-hidden="true"><use href="#sleepy-sun"/></svg>
+                  <span>Rize</span>
+                </div>
+                <div class="ring-label">Wake up</div>
+                <div class="ring-time live-time" aria-hidden="true">7:00</div>
+                <div class="ring-date" id="demo-chal-hint">Challenge: Math</div>
+              </div>
+              <div class="ring-bell" aria-hidden="true">
+                <svg><use href="#i-bell"/></svg>
+              </div>
+              <div class="ring-bottom">
+                <button class="solve-btn" id="btn-solve">Solve to stop</button>
+                <button class="giveup-btn" id="btn-giveup">I give up, let me sleep</button>
+              </div>
+            </div>
+
+            <!-- MATH -->
+            <div class="app-screen" data-screen="math">
+              <div class="app-lockup">
+                <svg aria-hidden="true"><use href="#sleepy-sun"/></svg>
+                <span>Rize</span>
+              </div>
+              <div class="chal-title">Solve 3 to dismiss</div>
+              <div class="prog-dots" id="math-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+              <div class="math-card" id="math-card">
+                <div class="math-eq" id="math-eq">7 + 8</div>
+                <div class="math-input" id="math-input" aria-label="Your answer">&nbsp;<span class="caret"></span></div>
+              </div>
+              <div class="chal-sub" id="math-sub"></div>
+              <div class="keypad" id="keypad"></div>
+            </div>
+
+            <!-- MEMORY -->
+            <div class="app-screen" data-screen="memory">
+              <div class="app-lockup">
+                <svg aria-hidden="true"><use href="#sleepy-sun"/></svg>
+                <span>Rize</span>
+              </div>
+              <div class="chal-title" id="mem-title">Watch the pattern</div>
+              <div class="chal-sub" id="mem-sub">It lights up once. Remember it.</div>
+              <div class="mem-grid" id="mem-grid"></div>
+            </div>
+
+            <!-- PHOTO (Pro preview) -->
+            <div class="app-screen" data-screen="photo">
+              <div class="app-lockup">
+                <svg aria-hidden="true"><use href="#sleepy-sun"/></svg>
+                <span>Rize</span>
+              </div>
+              <div class="chal-title">Photo challenge</div>
+              <div class="chal-sub">Photograph your coffee maker to dismiss</div>
+              <div class="pro-view">
+                <div class="viewfinder">
+                  <span class="pro-pill"><svg aria-hidden="true"><use href="#i-lock"/></svg> RIZE PRO</span>
+                  <div class="corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                  <div class="vf-icon" aria-hidden="true"><svg><use href="#i-camera"/></svg></div>
+                  <div class="scanline" aria-hidden="true"></div>
+                </div>
+              </div>
+              <div class="chal-sub" style="margin-top:14px">Runs fully on device. Nothing is recorded or stored.</div>
+              <button class="again-btn" data-back>Back to alarm</button>
+            </div>
+
+            <!-- PUSHUPS (Pro preview) -->
+            <div class="app-screen" data-screen="pushups">
+              <div class="app-lockup">
+                <svg aria-hidden="true"><use href="#sleepy-sun"/></svg>
+                <span>Rize</span>
+              </div>
+              <div class="chal-title">Push-up challenge</div>
+              <div class="chal-sub">Prop your phone up. The front camera counts.</div>
+              <div class="pro-view">
+                <div class="viewfinder">
+                  <span class="pro-pill"><svg aria-hidden="true"><use href="#i-lock"/></svg> RIZE PRO</span>
+                  <svg class="rep-ring" viewBox="0 0 100 100" aria-hidden="true">
+                    <circle class="track" cx="50" cy="50" r="44"/>
+                    <circle class="fill" id="rep-fill" cx="50" cy="50" r="44" stroke-dasharray="276.5" stroke-dashoffset="276.5"/>
+                  </svg>
+                  <div class="rep-counter">
+                    <div>
+                      <div class="rep-num" id="rep-num">0</div>
+                      <div class="rep-label" id="rep-label">of 2 push-ups</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="chal-sub" style="margin-top:14px">Counting happens on device, live. 2, 5 or 10 reps by difficulty.</div>
+              <button class="again-btn" data-back>Back to alarm</button>
+            </div>
+
+            <!-- SNOOZING -->
+            <div class="app-screen scr-snooze" data-screen="snoozing">
+              <span class="snooze-z" style="top:16%;left:20%;font-size:30px" aria-hidden="true">z</span>
+              <span class="snooze-z" style="top:11%;left:31%;font-size:44px;animation-delay:1.2s" aria-hidden="true">Z</span>
+              <div class="snooze-ring" aria-hidden="true">
+                <svg viewBox="0 0 100 100">
+                  <circle class="track" cx="50" cy="50" r="44"/>
+                  <circle class="fill" id="snooze-fill" cx="50" cy="50" r="44" stroke-dasharray="276.5" stroke-dashoffset="0"/>
+                </svg>
+                <div class="snooze-count" id="snooze-count">5</div>
+              </div>
+              <div class="chal-title">Nice try.</div>
+              <div class="chal-sub">The alarm is not done with you. It re-arms and rings again.</div>
+              <div class="chal-sub" style="margin-top:6px;opacity:0.75">In the app this wait is about a minute.</div>
+            </div>
+
+            <!-- DISMISSED -->
+            <div class="app-screen scr-done" data-screen="dismissed">
+              <div id="confetti-host" aria-hidden="true" style="position:absolute;inset:0;pointer-events:none"></div>
+              <svg class="bigsun" aria-hidden="true"><use href="#sleepy-sun"/></svg>
+              <div class="done-title">Dismissed</div>
+              <div class="done-streak"><svg aria-hidden="true"><use href="#i-flame"/></svg> Day 1 streak started</div>
+              <div class="done-sub">Your brain is on. Go win the morning.</div>
+              <button class="again-btn" id="btn-again">Ring it again</button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ CHALLENGES -->
+<section class="section-pad" id="challenges" style="padding-top:20px">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow">The challenges</span>
+      <h2>Four ways to prove you're up</h2>
+    </div>
+    <div class="chal-grid">
+      <article class="chal-card reveal" style="--d:0s">
+        <div class="chal-icon"><svg aria-hidden="true"><use href="#i-math"/></svg></div>
+        <h3>Math</h3>
+        <p>Solve 3 quick equations on a big friendly keypad. Simple when awake, surprisingly hard at 6 AM.</p>
+      </article>
+      <article class="chal-card reveal" style="--d:0.1s">
+        <div class="chal-icon"><svg aria-hidden="true"><use href="#i-brain"/></svg></div>
+        <h3>Memory</h3>
+        <p>Watch a pattern light up, then repeat it from memory. Your visual cortex has to clock in too.</p>
+      </article>
+      <article class="chal-card reveal" style="--d:0.2s">
+        <span class="pro-tag">PRO</span>
+        <div class="chal-icon"><svg aria-hidden="true"><use href="#i-camera"/></svg></div>
+        <h3>Photo</h3>
+        <p>Photograph an object you chose the night before, like the coffee maker. You have to physically get up.</p>
+      </article>
+      <article class="chal-card reveal" style="--d:0.3s">
+        <span class="pro-tag">PRO</span>
+        <div class="chal-icon"><svg aria-hidden="true"><use href="#i-pushup"/></svg></div>
+        <h3>Push-ups</h3>
+        <p>Prop your phone up and the front camera counts your reps live. 2, 5 or 10 depending on difficulty.</p>
+      </article>
+    </div>
+    <p class="chal-note reveal">Three difficulty levels scale every challenge. The Ruthless level ships with Rize Pro.</p>
+  </div>
+</section>
+
+<!-- ============================================================ STREAKS -->
+<section class="section-pad" id="streaks">
+  <div class="wrap">
+    <div class="streak-grid">
+      <div class="streak-copy">
+        <span class="eyebrow reveal">Streaks and insights</span>
+        <h2 class="reveal" style="--d:0.08s">Become a morning person, visibly</h2>
+        <p class="reveal" style="--d:0.16s">Every solved morning grows your streak. Miss one and a streak freeze can save it. Over time, the Insights tab in Rize Pro shows the person you're becoming.</p>
+        <ul class="streak-points reveal" style="--d:0.24s">
+          <li><svg aria-hidden="true"><use href="#i-flame"/></svg> Daily streaks that make skipping feel expensive</li>
+          <li><svg aria-hidden="true"><use href="#i-snow"/></svg> A streak freeze saves your streak when life happens</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg> Interactive charts of wake times and solves</li>
+        </ul>
+      </div>
+      <div class="streak-card reveal" style="--d:0.15s" role="img" aria-label="Illustration of the Rize streak card showing a 12 day streak, a week of completed mornings and a wake time chart">
+        <div class="streak-top">
+          <div class="flame-wrap" aria-hidden="true"><svg><use href="#i-flame"/></svg></div>
+          <div>
+            <div class="streak-num rounded" id="streak-num">0</div>
+            <div class="streak-sub">day streak</div>
+          </div>
+          <span class="freeze-chip"><svg aria-hidden="true"><use href="#i-snow"/></svg> 2 freezes</span>
+        </div>
+        <div class="week-row" aria-hidden="true">
+          <div class="week-day done"><span class="week-dot"><svg><use href="#i-check"/></svg></span>M</div>
+          <div class="week-day done"><span class="week-dot"><svg><use href="#i-check"/></svg></span>T</div>
+          <div class="week-day frozen"><span class="week-dot"><svg><use href="#i-snow"/></svg></span>W</div>
+          <div class="week-day done"><span class="week-dot"><svg><use href="#i-check"/></svg></span>T</div>
+          <div class="week-day done"><span class="week-dot"><svg><use href="#i-check"/></svg></span>F</div>
+          <div class="week-day done"><span class="week-dot"><svg><use href="#i-check"/></svg></span>S</div>
+          <div class="week-day today"><span class="week-dot"><svg><use href="#i-bell"/></svg></span>S</div>
+        </div>
+        <div class="insights-mini" aria-hidden="true">
+          <div class="insights-title"><span>Wake times this week</span><b>7:04 avg</b></div>
+          <div class="bars" id="bars">
+            <div class="bar" tabindex="-1"><span class="tip">7:31</span><i data-h="78%"></i></div>
+            <div class="bar" tabindex="-1"><span class="tip">7:22</span><i data-h="70%"></i></div>
+            <div class="bar" tabindex="-1"><span class="tip">7:15</span><i data-h="63%"></i></div>
+            <div class="bar" tabindex="-1"><span class="tip">7:02</span><i data-h="52%"></i></div>
+            <div class="bar" tabindex="-1"><span class="tip">6:54</span><i data-h="45%"></i></div>
+            <div class="bar" tabindex="-1"><span class="tip">6:47</span><i data-h="39%"></i></div>
+            <div class="bar" tabindex="-1"><span class="tip">6:31</span><i data-h="30%"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ PRIVACY -->
+<section class="section-pad privacy-band" id="privacy">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow">Privacy</span>
+      <h2>Private by design</h2>
+    </div>
+    <p class="priv-lead reveal" style="--d:0.1s">No ads. No tracking. No third-party servers. You sign in with Apple, and your data lives on your iPhone and in your private iCloud, which only you can access. Camera challenges run fully on device, and nothing is ever recorded or stored.</p>
+    <div class="priv-grid">
+      <div class="priv-tile reveal" style="--d:0s">
+        <div class="p-icon"><svg aria-hidden="true"><use href="#i-eye-slash"/></svg></div>
+        <h3>No tracking</h3>
+        <p>No analytics SDKs, no ad networks, no profiles. Even this website has none.</p>
+      </div>
+      <div class="priv-tile reveal" style="--d:0.1s">
+        <div class="p-icon"><svg aria-hidden="true"><use href="#i-iphone"/></svg></div>
+        <h3>On your device</h3>
+        <p>Alarms, streaks and insights are computed and stored on your iPhone.</p>
+      </div>
+      <div class="priv-tile reveal" style="--d:0.2s">
+        <div class="p-icon"><svg aria-hidden="true"><use href="#i-cloud-lock"/></svg></div>
+        <h3>Your private iCloud</h3>
+        <p>Sync uses your personal iCloud. We never see it and couldn't if we wanted to.</p>
+      </div>
+      <div class="priv-tile reveal" style="--d:0.3s">
+        <div class="p-icon"><svg aria-hidden="true"><use href="#i-camera"/></svg></div>
+        <h3>Camera stays local</h3>
+        <p>Photo and push-up checks run on device. Nothing is recorded or uploaded.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ PRICING -->
+<section class="section-pad" id="pro">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow">Rize Pro</span>
+      <h2>Free to start. Pro to go further.</h2>
+      <p>The core alarm and challenges are free. Rize Pro unlocks the full arsenal.</p>
+    </div>
+    <div class="pro-unlocks reveal" style="--d:0.1s">
+      <span class="unlock-chip"><svg aria-hidden="true"><use href="#i-camera"/></svg> Photo challenge</span>
+      <span class="unlock-chip"><svg aria-hidden="true"><use href="#i-pushup"/></svg> Push-up challenge</span>
+      <span class="unlock-chip"><svg aria-hidden="true"><use href="#i-bell"/></svg> Unlimited alarms</span>
+      <span class="unlock-chip"><svg aria-hidden="true"><use href="#i-flame"/></svg> Ruthless difficulty</span>
+      <span class="unlock-chip"><svg aria-hidden="true"><use href="#i-check"/></svg> Insights</span>
+    </div>
+    <div class="plans">
+      <article class="plan plan-best reveal" style="--d:0s">
+        <span class="best-badge">Best value</span>
+        <div class="plan-name">Yearly</div>
+        <div class="plan-price"><span data-cfg="priceYearly">$19.99</span><span class="unit"> / year</span></div>
+        <div class="plan-meta">
+          <span class="plan-permonth"><span data-cfg="perMonthYearly">$1.67</span> per month</span>
+          <span class="save-chip">Save <span data-cfg="savePct">44%</span></span>
+        </div>
+        <ul class="plan-features">
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg> 1 week free, full access</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg> Everything in Rize Pro</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg> One coffee, a year of mornings</li>
+        </ul>
+        <a class="btn btn-primary" href="#" data-cfg-href="appStoreUrl">Start 1 week free</a>
+      </article>
+      <article class="plan reveal" style="--d:0.12s">
+        <div class="plan-name">Monthly</div>
+        <div class="plan-price"><span data-cfg="priceMonthly">$2.99</span><span class="unit"> / month</span></div>
+        <div class="plan-meta">
+          <span class="plan-permonth">Flexible, cancel anytime</span>
+        </div>
+        <ul class="plan-features">
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg> 1 week free, full access</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg> Everything in Rize Pro</li>
+          <li><svg aria-hidden="true"><use href="#i-check"/></svg> Commit one month at a time</li>
+        </ul>
+        <a class="btn btn-tint" href="#" data-cfg-href="appStoreUrl">Start 1 week free</a>
+      </article>
+    </div>
+    <p class="plans-fineprint reveal">Subscriptions are billed through your Apple account and can be canceled anytime. Prices may vary by region.</p>
+  </div>
+</section>
+
+<!-- ============================================================ FAQ -->
+<section class="section-pad" id="faq" style="padding-top:20px">
+  <div class="wrap">
+    <div class="section-head center reveal">
+      <span class="eyebrow">FAQ</span>
+      <h2>Fair questions</h2>
+    </div>
+    <div class="faq-list reveal" style="--d:0.1s">
+      <details class="faq-item">
+        <summary>How does Rize stop me from sleeping through alarms? <span class="faq-plus"><svg aria-hidden="true"><use href="#i-plus"/></svg></span></summary>
+        <p class="faq-body">When your alarm rings, you tap Solve to open a challenge. The alarm only truly stops once you complete it. Leave early and it rings right back about a minute later.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What are the challenge types? <span class="faq-plus"><svg aria-hidden="true"><use href="#i-plus"/></svg></span></summary>
+        <p class="faq-body">Math, Memory, Photo, and Push-ups. Difficulty scales how hard each one is, from gentle to ruthless. Photo, Push-ups, and the Ruthless level are part of Rize Pro.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Do you collect my data? <span class="faq-plus"><svg aria-hidden="true"><use href="#i-plus"/></svg></span></summary>
+        <p class="faq-body">No servers, no ads, no tracking. Your data stays on your device and in your private iCloud. Camera challenges run fully on device and nothing is recorded.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Can I try Pro for free? <span class="faq-plus"><svg aria-hidden="true"><use href="#i-plus"/></svg></span></summary>
+        <p class="faq-body">Yes, both plans start with a 1-week free trial. Cancel anytime from your Apple account settings.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+</div><!-- /.day -->
+
+<!-- ============================================================ FINAL CTA -->
+<section class="final-cta">
+  <div class="wrap">
+    <svg class="bigsun reveal" aria-hidden="true"><use href="#sleepy-sun"/></svg>
+    <h2 class="reveal" style="--d:0.08s">Tomorrow morning, actually get up.</h2>
+    <p class="reveal" style="--d:0.16s">Set one alarm with Rize tonight. Your 6 AM self will complain. Your 9 AM self will be grateful.</p>
+    <a class="store-badge reveal" style="--d:0.24s" href="#" data-cfg-href="appStoreUrl" aria-label="Download Rize on the App Store">
+      <svg role="img" aria-hidden="true"><use href="#store-badge"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- ============================================================ FOOTER -->
+<footer class="footer">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Rize, back to top">
+      <svg aria-hidden="true"><use href="#sleepy-sun"/></svg>
+      <span class="brand-name">Rize</span>
+    </a>
+    <div class="footer-links">
+      <a href="https://efeaksoy9445.github.io/rize-legal/privacy.html">Privacy Policy</a>
+      <a href="https://efeaksoy9445.github.io/rize-legal/terms.html">Terms of Use</a>
+      <a href="https://efeaksoy9445.github.io/rize-legal/support.html">Support</a>
+      <a href="mailto:efeaksoy9445@gmail.com">Contact</a>
+    </div>
+    <p class="footer-tag">Made for people who hit snooze five times.</p>
+    <p class="footer-copy">&copy; 2026 Efe Aksoy. Rize is made for iPhone, iOS 26 and later.</p>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ============================================================
+   CONFIG: fill these in before publishing.
+   appStoreUrl: your App Store product page link.
+   Prices: shown as-is; match your App Store Connect pricing.
+   ============================================================ */
+const CONFIG = {
+  appStoreUrl: "https://apps.apple.com/app/rize-alarm-challenge/id6774970002",
+  priceMonthly: "$2.99",     /* [PRICE_MONTHLY] */
+  priceYearly: "$19.99",     /* [PRICE_YEARLY] */
+  perMonthYearly: "$1.67",   /* yearly price divided by 12 */
+  savePct: "44%"             /* savings vs 12 months of monthly */
+};
+
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+/* Apply config */
+$$("[data-cfg]").forEach(el => { const v = CONFIG[el.dataset.cfg]; if (v) el.textContent = v; });
+$$("[data-cfg-href]").forEach(el => { const v = CONFIG[el.dataset.cfgHref]; if (v) el.setAttribute("href", v); });
+
+/* ============================================================
+   Live clock (hero + demo phones show the visitor's real time)
+   ============================================================ */
+const timeFmt = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" });
+function tickClock() {
+  const now = timeFmt.format(new Date());
+  $$(".live-time").forEach(el => { el.textContent = now; });
+}
+tickClock();
+setInterval(tickClock, 1000);
+const heroLabel = $("#hero-ring-label");
+if (heroLabel) {
+  const weekday = new Intl.DateTimeFormat("en", { weekday: "long" }).format(new Date());
+  heroLabel.textContent = weekday + " morning";
+}
+
+/* ============================================================
+   Star fields
+   ============================================================ */
+function sprinkleStars(host, count) {
+  if (!host) return;
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement("span");
+    s.className = "star";
+    const size = Math.random() * 2.1 + 0.8;
+    s.style.width = size + "px";
+    s.style.height = size + "px";
+    s.style.left = Math.random() * 100 + "%";
+    s.style.top = Math.random() * 78 + "%";
+    s.style.animationDelay = (Math.random() * 4).toFixed(2) + "s";
+    s.style.animationDuration = (2.6 + Math.random() * 3).toFixed(2) + "s";
+    host.appendChild(s);
+  }
+}
+sprinkleStars($("#hero-stars"), 90);
+sprinkleStars($("#scene-stars"), 70);
+
+/* ============================================================
+   Hero phone tilt (pointer parallax, desktop only)
+   ============================================================ */
+const heroPhone = $("#hero-phone");
+if (heroPhone && !reducedMotion && window.matchMedia("(pointer: fine)").matches) {
+  const hero = $(".hero");
+  hero.addEventListener("pointermove", e => {
+    const r = hero.getBoundingClientRect();
+    const nx = (e.clientX - r.left) / r.width - 0.5;
+    const ny = (e.clientY - r.top) / r.height - 0.5;
+    heroPhone.style.transform = `rotateY(${nx * 10}deg) rotateX(${ny * -8}deg)`;
+  });
+  hero.addEventListener("pointerleave", () => { heroPhone.style.transform = ""; });
+}
+
+/* ============================================================
+   Scroll reveals
+   ============================================================ */
+const revealIO = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (en.isIntersecting) { en.target.classList.add("in"); revealIO.unobserve(en.target); }
+  });
+}, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
+$$(".reveal").forEach(el => revealIO.observe(el));
+
+/* ============================================================
+   Sunrise scroll scene
+   ============================================================ */
+const scene = $("#sunrise");
+const sceneSun = $("#scene-sun");
+const skyGlow = $("#sky-glow");
+const skyDay = $("#sky-day");
+const sceneStars = $("#scene-stars");
+const sceneA = $("#scene-a");
+const sceneB = $("#scene-b");
+const hillsDay = $("#hills-day");
+const hillsNight = $("#hills-night");
+const nav = $("#nav");
+
+const clamp01 = v => Math.min(1, Math.max(0, v));
+const smooth = (v, a, b) => clamp01((v - a) / (b - a));
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+function renderSunrise(p) {
+  /* Dawn starts while the first line is still on screen, so there is no
+     long stretch of pure darkness mid-scene. */
+  const rise = easeOut(p);
+  sceneSun.style.transform = `translate(-50%, ${105 - rise * 128}%)`;
+  skyGlow.style.opacity = clamp01(p * 2.4).toFixed(3);
+  skyDay.style.opacity = smooth(p, 0.3, 0.68).toFixed(3);
+  sceneStars.style.opacity = (1 - smooth(p, 0.05, 0.38)).toFixed(3);
+  hillsDay.style.opacity = smooth(p, 0.35, 0.72).toFixed(3);
+  hillsNight.style.opacity = (1 - smooth(p, 0.4, 0.78)).toFixed(3);
+  const aOut = 1 - smooth(p, 0.12, 0.38);
+  sceneA.style.opacity = aOut.toFixed(3);
+  sceneA.style.transform = `translateY(${-(1 - aOut) * 40}px)`;
+  const bIn = smooth(p, 0.45, 0.68);
+  sceneB.style.opacity = bIn.toFixed(3);
+  sceneB.style.transform = `translateY(${(1 - bIn) * 40}px)`;
+}
+
+let sunriseTicking = false;
+function onScroll() {
+  if (sunriseTicking) return;
+  sunriseTicking = true;
+  requestAnimationFrame(() => {
+    sunriseTicking = false;
+    const vh = window.innerHeight;
+    const rect = scene.getBoundingClientRect();
+    const total = rect.height - vh;
+    const p = clamp01(-rect.top / total);
+    if (!reducedMotion) renderSunrise(p);
+
+    /* Nav theme: night over the hero and the dark closing sections,
+       day while the sun is up */
+    const pastSunrise = rect.bottom <= vh * 1.05;
+    const dusk = document.querySelector(".final-cta");
+    const inDusk = dusk && window.scrollY + 80 >= dusk.offsetTop;
+    nav.classList.toggle("is-day", pastSunrise && !inDusk);
+    nav.classList.toggle("is-night-solid", (!pastSunrise && window.scrollY > 24) || inDusk);
+  });
+}
+if (reducedMotion) {
+  renderSunrise(1); /* static final frame: sun up, day sky */
+}
+window.addEventListener("scroll", onScroll, { passive: true });
+window.addEventListener("resize", onScroll);
+onScroll();
+
+/* ============================================================
+   DEMO: the playable wake-up flow
+   ============================================================ */
+const demo = {
+  screen: "ringing",
+  challenge: "math",
+  difficulty: "medium",
+  timers: []
+};
+const screens = $$("#demo-screen .app-screen");
+const chalNames = { math: "Math", memory: "Memory", photo: "Photo", pushups: "Push-ups" };
+
+function clearDemoTimers() {
+  demo.timers.forEach(t => clearTimeout(t));
+  demo.timers = [];
+  if (demo.snoozeInterval) { clearInterval(demo.snoozeInterval); demo.snoozeInterval = null; }
+  if (demo.repInterval) { clearInterval(demo.repInterval); demo.repInterval = null; }
+}
+function wait(fn, ms) { demo.timers.push(setTimeout(fn, ms)); }
+
+function showScreen(name) {
+  clearDemoTimers();
+  const demoHost = $("#demo-screen");
+  const hadFocus = demoHost.contains(document.activeElement);
+  demo.screen = name;
+  screens.forEach(s => s.classList.toggle("active", s.dataset.screen === name));
+  if (name === "math") startMath();
+  if (name === "memory") startMemory();
+  if (name === "snoozing") startSnooze();
+  if (name === "pushups") startRepLoop();
+  if (name === "dismissed" && !reducedMotion) throwConfetti();
+  /* Keep keyboard users inside the demo when a screen swap hides their focus */
+  if (hadFocus) {
+    const next = demoHost.querySelector(".app-screen.active button, .app-screen.active a");
+    if (next) next.focus({ preventScroll: true });
+  }
+}
+
+/* Challenge picker chips */
+$$(".chip[data-chal]").forEach(chip => {
+  chip.addEventListener("click", () => {
+    $$(".chip[data-chal]").forEach(c => c.setAttribute("aria-pressed", c === chip ? "true" : "false"));
+    demo.challenge = chip.dataset.chal;
+    $("#demo-chal-hint").textContent = "Challenge: " + chalNames[demo.challenge];
+    showScreen("ringing");
+  });
+});
+
+/* Difficulty segmented control */
+$$(".seg [data-diff]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    $$(".seg [data-diff]").forEach(b => b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+    demo.difficulty = btn.dataset.diff;
+    if (demo.screen === "math" || demo.screen === "memory" || demo.screen === "pushups") showScreen(demo.screen);
+  });
+});
+
+$("#btn-solve").addEventListener("click", () => showScreen(demo.challenge));
+$("#btn-giveup").addEventListener("click", () => showScreen("snoozing"));
+$("#btn-again").addEventListener("click", () => showScreen("ringing"));
+$$("[data-back]").forEach(b => b.addEventListener("click", () => showScreen("ringing")));
+
+/* ------------------ MATH ------------------ */
+const mathState = { problems: [], idx: 0, input: "" };
+function randInt(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+function makeProblem(diff) {
+  if (diff === "easy") {
+    const a = randInt(2, 9), b = randInt(2, 9);
+    return { text: `${a} + ${b}`, ans: a + b };
+  }
+  if (diff === "medium") {
+    if (Math.random() < 0.5) {
+      const a = randInt(11, 49), b = randInt(11, 49);
+      return { text: `${a} + ${b}`, ans: a + b };
+    }
+    const a = randInt(25, 79), b = randInt(11, 24);
+    return { text: `${a} − ${b}`, ans: a - b };
+  }
+  if (Math.random() < 0.5) {
+    const a = randInt(6, 14), b = randInt(6, 14);
+    return { text: `${a} × ${b}`, ans: a * b };
+  }
+  const a = randInt(6, 12), b = randInt(3, 9), c = randInt(11, 39);
+  return { text: `${a} × ${b} + ${c}`, ans: a * b + c };
+}
+function startMath() {
+  mathState.problems = [makeProblem(demo.difficulty), makeProblem(demo.difficulty), makeProblem(demo.difficulty)];
+  mathState.idx = 0;
+  mathState.input = "";
+  $("#math-sub").textContent = "";
+  $("#math-card").classList.remove("shake", "wrong");
+  renderMath();
+}
+function renderMath() {
+  $("#math-eq").textContent = mathState.problems[mathState.idx].text;
+  $("#math-input").innerHTML = (mathState.input || "&nbsp;") + '<span class="caret"></span>';
+  $$("#math-dots span").forEach((d, i) => d.classList.toggle("done", i < mathState.idx));
+}
+function mathKey(k) {
+  if (demo.screen !== "math" || mathState.idx >= mathState.problems.length) return;
+  const card = $("#math-card");
+  if (k === "del") {
+    mathState.input = mathState.input.slice(0, -1);
+  } else if (k === "ok") {
+    if (!mathState.input) return;
+    if (parseInt(mathState.input, 10) === mathState.problems[mathState.idx].ans) {
+      mathState.idx += 1;
+      mathState.input = "";
+      if (mathState.idx >= 3) {
+        $$("#math-dots span").forEach(d => d.classList.add("done"));
+        wait(() => showScreen("dismissed"), 350);
+        return;
+      }
+      $("#math-sub").textContent = mathState.idx === 2 ? "Last one. You're basically up." : "Nice. Next.";
+    } else {
+      mathState.input = "";
+      $("#math-sub").textContent = "Not quite. The alarm keeps ringing.";
+      card.classList.add("shake", "wrong");
+      wait(() => card.classList.remove("shake", "wrong"), 450);
+    }
+  } else if (mathState.input.length < 4) {
+    mathState.input += k;
+  }
+  renderMath();
+}
+(function buildKeypad() {
+  const host = $("#keypad");
+  const keys = ["1","2","3","4","5","6","7","8","9","del","0","ok"];
+  keys.forEach(k => {
+    const b = document.createElement("button");
+    b.className = "key" + (k === "ok" ? " key-ok" : "");
+    if (k === "del") {
+      b.innerHTML = '<svg aria-hidden="true"><use href="#i-back"/></svg>';
+      b.setAttribute("aria-label", "Delete");
+    } else if (k === "ok") {
+      b.innerHTML = '<svg aria-hidden="true"><use href="#i-check"/></svg>';
+      b.setAttribute("aria-label", "Submit answer");
+    } else {
+      b.textContent = k;
+    }
+    b.addEventListener("click", () => mathKey(k));
+    host.appendChild(b);
+  });
+})();
+
+/* ------------------ MEMORY ------------------ */
+const memState = { pattern: [], step: 0, accepting: false };
+const memLens = { easy: 4, medium: 5, hard: 6 };
+(function buildMemGrid() {
+  const host = $("#mem-grid");
+  for (let i = 0; i < 9; i++) {
+    const b = document.createElement("button");
+    b.className = "mem-tile";
+    b.dataset.tile = i;
+    b.setAttribute("aria-label", "Tile " + (i + 1));
+    b.addEventListener("click", () => memTap(i));
+    host.appendChild(b);
+  }
+})();
+function memTiles() { return $$("#mem-grid .mem-tile"); }
+function startMemory() {
+  const len = memLens[demo.difficulty];
+  const cells = [0,1,2,3,4,5,6,7,8];
+  memState.pattern = [];
+  for (let i = 0; i < len; i++) {
+    memState.pattern.push(cells.splice(Math.floor(Math.random() * cells.length), 1)[0]);
+  }
+  memState.step = 0;
+  memState.accepting = false;
+  playPattern();
+}
+function playPattern() {
+  memState.accepting = false;
+  $("#mem-title").textContent = "Watch the pattern";
+  $("#mem-sub").textContent = "It lights up once. Remember it.";
+  const tiles = memTiles();
+  $("#mem-grid").classList.remove("shake");
+  tiles.forEach(t => { t.disabled = true; t.classList.remove("lit", "good", "bad"); });
+  memState.pattern.forEach((cell, i) => {
+    wait(() => tiles[cell].classList.add("lit"), 700 + i * 640);
+    wait(() => tiles[cell].classList.remove("lit"), 700 + i * 640 + 450);
+  });
+  wait(() => {
+    tiles.forEach(t => { t.disabled = false; });
+    memState.accepting = true;
+    memState.step = 0;
+    $("#mem-title").textContent = "Your turn";
+    $("#mem-sub").textContent = "Repeat it in order.";
+  }, 700 + memState.pattern.length * 640 + 250);
+}
+function memTap(i) {
+  if (!memState.accepting) return;
+  const tiles = memTiles();
+  if (i === memState.pattern[memState.step]) {
+    tiles[i].classList.add("good");
+    wait(() => tiles[i].classList.remove("good"), 380);
+    memState.step += 1;
+    if (memState.step >= memState.pattern.length) {
+      memState.accepting = false;
+      wait(() => showScreen("dismissed"), 420);
+    }
+  } else {
+    memState.accepting = false;
+    tiles[i].classList.add("bad");
+    $("#mem-grid").classList.add("shake");
+    $("#mem-sub").textContent = "Nope. Watch it again.";
+    wait(() => {
+      tiles[i].classList.remove("bad");
+      $("#mem-grid").classList.remove("shake");
+      playPattern();
+    }, 750);
+  }
+}
+
+/* ------------------ SNOOZE (give up → re-ring) ------------------ */
+const SNOOZE_SECONDS = 5;
+function startSnooze() {
+  let left = SNOOZE_SECONDS;
+  const count = $("#snooze-count");
+  const fill = $("#snooze-fill");
+  const C = 276.5;
+  count.textContent = left;
+  fill.style.strokeDashoffset = 0;
+  demo.snoozeInterval = setInterval(() => {
+    left -= 1;
+    if (left <= 0) {
+      clearInterval(demo.snoozeInterval);
+      demo.snoozeInterval = null;
+      showScreen("ringing");
+      return;
+    }
+    count.textContent = left;
+    fill.style.strokeDashoffset = (C * (1 - left / SNOOZE_SECONDS)).toFixed(1);
+  }, 1000);
+}
+
+/* ------------------ PUSH-UP PREVIEW LOOP ------------------ */
+const repTargets = { easy: 2, medium: 5, hard: 10 };
+function startRepLoop() {
+  if (demo.repInterval) { clearInterval(demo.repInterval); demo.repInterval = null; }
+  const target = repTargets[demo.difficulty];
+  const num = $("#rep-num");
+  const label = $("#rep-label");
+  const fill = $("#rep-fill");
+  const C = 276.5;
+  label.textContent = "of " + target + " push-ups";
+  let n = 0;
+  num.textContent = "0";
+  fill.style.strokeDashoffset = C;
+  demo.repInterval = setInterval(() => {
+    n = (n > target) ? 0 : n + 1;
+    if (n > target) { n = 0; }
+    num.textContent = Math.min(n, target);
+    fill.style.strokeDashoffset = (C * (1 - Math.min(n, target) / target)).toFixed(1);
+    if (n === target) {
+      /* brief pause at completion, then restart */
+      clearInterval(demo.repInterval);
+      demo.repInterval = null;
+      wait(() => { if (demo.screen === "pushups") startRepLoop(); }, 1400);
+    }
+  }, 900);
+}
+
+/* ------------------ CONFETTI ------------------ */
+const confettiColors = ["#FF7A59", "#FFB27A", "#FFD24A", "#FF8A4A"];
+function throwConfetti() {
+  const host = $("#confetti-host");
+  host.innerHTML = "";
+  for (let i = 0; i < 26; i++) {
+    const c = document.createElement("span");
+    c.className = "confetti";
+    c.style.left = Math.random() * 100 + "%";
+    c.style.background = confettiColors[i % confettiColors.length];
+    c.style.animationDelay = (Math.random() * 0.35).toFixed(2) + "s";
+    c.style.transform = "translateY(0)";
+    host.appendChild(c);
+  }
+  wait(() => { host.innerHTML = ""; }, 2400);
+}
+
+/* ============================================================
+   Streak card: count-up + bars grow when visible
+   ============================================================ */
+const streakCard = $(".streak-card");
+if (streakCard) {
+  const streakIO = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if (!en.isIntersecting) return;
+      streakIO.disconnect();
+      /* Count up the streak number */
+      const el = $("#streak-num");
+      const target = 12;
+      if (reducedMotion) { el.textContent = target; }
+      else {
+        const t0 = performance.now();
+        const dur = 1000;
+        (function step(t) {
+          const p = clamp01((t - t0) / dur);
+          el.textContent = Math.round(easeOut(p) * target);
+          if (p < 1) requestAnimationFrame(step);
+        })(t0);
+      }
+      /* Grow the bars */
+      $$("#bars .bar i").forEach((bar, i) => {
+        bar.style.transitionDelay = (i * 0.07) + "s";
+        requestAnimationFrame(() => { bar.style.height = bar.dataset.h; });
+      });
+    });
+  }, { threshold: 0.4 });
+  streakIO.observe(streakCard);
+}
+</script>
+</body>
+</html>
